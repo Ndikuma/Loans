@@ -8,7 +8,7 @@ from django.utils import timezone  # noqa: F401
 from django.utils.timezone import now  # noqa: F401
 from django.utils.translation import gettext_lazy as _
 
-from apps.authantification.models import User
+from config.apps.authantification.models import User
 
 from .utils import PaymentPlanCalculator
 

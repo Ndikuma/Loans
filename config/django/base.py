@@ -1,8 +1,9 @@
+import os
 from datetime import timedelta
-from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+from config.env import BASE_DIR, env
+
+env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # Application definition
 INSTALLED_APPS = [
@@ -17,13 +18,13 @@ INSTALLED_APPS = [
     "silk",
     "django.contrib.sites",
     "dj_rest_auth",
-    "apps.authantification",
+    "config.apps.authantification",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "dj_rest_auth.registration",
     "django_extensions",
-    "apps.Loan",
+    "config.apps.Loan",
 ]
 SITE_ID = 1
 
@@ -39,7 +40,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-ROOT_URLCONF = "settings.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -57,7 +58,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "settings.wsgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 AUTH_USER_MODEL = "authantification.User"
 
@@ -96,7 +97,7 @@ REST_FRAMEWORK = {
 
 REST_AUTH = {
     "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
-    "REGISTER_SERIALIZER": "apps.authantification.serializers.RegisterSerializer",
+    "REGISTER_SERIALIZER": "config.apps.authantification.serializers.RegisterSerializer",
     "REGISTER_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "SESSION_LOGIN": True,
     "USE_JWT": False,

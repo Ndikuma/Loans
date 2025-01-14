@@ -1,12 +1,16 @@
-from .base import *
+from config.env import env
+
+from .base import *  # noqa: F401
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-2*ijp440(trkyh-d=ndn7+jfrmj@-zd^hl$(y&jw#o7l$%o68="
 
+SECRET_KEY = env(
+    "SECRET_KEY",
+    default="django-insecure-2*ijp440(trkyh-d=ndn7+jfrmj@-zd^hl$(y&jw#o7l$%o68=",
+)
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = env.bool("DJANGO_DEBUG", default=True)
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 DATABASES = {
     "default": {
