@@ -1,0 +1,24 @@
+[flake8]
+# Maximum allowed line length (adjust based on your needs)
+max-line-length = 188
+
+# Ignore specific errors or warnings
+# E501: Line too long (handled by Black)
+# W503: Line break occurred before a binary operator
+# F403: Star imports
+# F405: Undefined names from star imports
+ignore = E501, W503, F403, F405
+
+# Specify directories to exclude
+exclude =
+    .git,
+    __pycache__,
+    migrations,
+    settings/*,
+    manage.py,
+    venv
+
+# Specify file types to check
+filename = *.py
+
+# Additional Flake8 plugins can be added here if needed
