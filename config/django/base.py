@@ -2,6 +2,10 @@ import os
 from datetime import timedelta
 
 from config.env import BASE_DIR, env
+from config.settings.celery import *  # noqa
+from config.settings.cors import *  # noqa
+from config.settings.sentry import *  # noqa
+from config.settings.sessions import *  # noqa
 
 env.read_env(os.path.join(BASE_DIR, ".env"))
 
@@ -25,6 +29,7 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     "django_extensions",
     "config.apps.Loan",
+    "corsheaders",
 ]
 SITE_ID = 1
 
@@ -37,6 +42,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "silk.middleware.SilkyMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    # 'django.middleware.common.CommonMiddleware',
     "allauth.account.middleware.AccountMiddleware",
 ]
 
