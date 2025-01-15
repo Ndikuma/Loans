@@ -4,7 +4,8 @@ from datetime import timedelta
 from config.env import BASE_DIR, env
 from config.settings.celery import *  # noqa
 from config.settings.cors import *  # noqa
-from config.settings.sentry import *  # noqa
+
+# from config.settings.sentry import *  # noqa
 from config.settings.sessions import *  # noqa
 
 env.read_env(os.path.join(BASE_DIR, ".env"))

@@ -11,6 +11,6 @@ def trigger_error(request):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/", include("dj_rest_auth.urls")),
-    path("", trigger_error),
+    path("", include("config.apps.Loan.urls")),
     path("auth/registration/", include("dj_rest_auth.registration.urls")),
 ]
