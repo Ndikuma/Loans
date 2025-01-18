@@ -2,10 +2,42 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from .models import Loan, Wallet
+from .models import Loan, Wallet, WalletActivity
+from .utils import PaymentPlanCalculator
+
+
+class WalletActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WalletActivity
+        fields = [
+            "id",
+            "activity_type",
+            "amount",
+            "timestamp",
+            "description",
+        ]
+        read_only_fields = fields
+
+
+class PaymentPlanSerializer(serializers.Serializer):
+    """
+    Serializer for generating and displaying the payment plan of a loan.
+    """
+
+    period = serializers.CharField()
+    due_date = serializers.DateField()
+    payment_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
+    amount_paid = serializers.DecimalField(max_digits=20, decimal_places=2)
+    status = serializers.CharField()
+    overdue_days = serializers.IntegerField(required=False)
+    late_payment_fee = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False
+    )
 
 
 class WalletSerializer(serializers.ModelSerializer):
+    activities = WalletActivitySerializer(many=True, read_only=True)
+
     class Meta:
         model = Wallet
         fields = [
@@ -13,10 +45,10 @@ class WalletSerializer(serializers.ModelSerializer):
             "user",
             "wallet_type",
             "balance",
-            "max_withdrawal_limit",
             "notifications_enabled",
+            "activities",
         ]
-        read_only_fields = ["id", "balance"]
+        read_only_fields = ["id", "balance", "activities"]
 
     def add_balance(self, amount: Decimal):
         wallet = self.instance
@@ -30,17 +62,15 @@ class WalletSerializer(serializers.ModelSerializer):
 
 
 class LoanSerializer(serializers.ModelSerializer):
-    total_amount_to_pay = serializers.DecimalField(
-        max_digits=20, decimal_places=2, read_only=True
-    )
-
     remaining_amount = serializers.DecimalField(
         max_digits=20, decimal_places=2, read_only=True
     )
     is_fully_repaid = serializers.BooleanField(read_only=True)
     is_overdue = serializers.BooleanField(read_only=True)
+    payment_progress = serializers.DecimalField(
+        max_digits=20, decimal_places=2, read_only=True
+    )
     payment_plan = serializers.SerializerMethodField()
-    payment_made = serializers.SerializerMethodField()
 
     class Meta:
         model = Loan
@@ -60,14 +90,11 @@ class LoanSerializer(serializers.ModelSerializer):
             "late_payment_fee",
             "penalty_rate",
             "approval_date",
-            "created_at",
-            "updated_at",
-            "total_amount_to_pay",
             "remaining_amount",
             "is_fully_repaid",
             "is_overdue",
+            "payment_progress",
             "payment_plan",
-            "payment_made",
         ]
         read_only_fields = [
             "id",
@@ -75,12 +102,13 @@ class LoanSerializer(serializers.ModelSerializer):
             "total_amount",
             "amount_paid",
             "late_payment_fee",
-            "created_at",
-            "updated_at",
             "total_amount_to_pay",
             "remaining_amount",
             "is_fully_repaid",
             "is_overdue",
+            "start_date",
+            "end_date",
+            "approval_date",
         ]
 
     def create(self, validated_data):
@@ -98,7 +126,9 @@ class LoanSerializer(serializers.ModelSerializer):
         return instance
 
     def get_payment_plan(self, obj):
-        return obj.calculate_payment_plan().get_payment_status()
-
-    def get_payment_made(self, obj):
-        return obj.calculate_payment_plan().get_payments_made()
+        """
+        Generate the payment plan for the loan instance.
+        """
+        calculator = PaymentPlanCalculator(obj)
+        payment_plan = calculator.get_payment_status()
+        return PaymentPlanSerializer(payment_plan, many=True).data

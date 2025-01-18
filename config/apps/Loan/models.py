@@ -6,8 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 from config.apps.authantification.models import User
 
-from .utils import PaymentPlanCalculator
-
 
 class Loan(models.Model):
     # Status Choices
@@ -42,7 +40,7 @@ class Loan(models.Model):
         max_digits=20, default=Decimal("0.00"), decimal_places=2, null=True, blank=True
     )
     amount_paid = models.DecimalField(
-        max_digits=20, decimal_places=2, null=True, blank=True
+        max_digits=20, decimal_places=2, null=True, blank=True, default=Decimal("0.00")
     )
     late_payment_fee = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
@@ -54,23 +52,15 @@ class Loan(models.Model):
 
     def save(self, *args, **kwargs):
         self.total_amount = self.total_amount_to_pay()
-        if not self.end_date:
+        self.update_status
+        if not self.end_date and self.approval_date:
             from dateutil.relativedelta import relativedelta
 
             self.end_date = self.approval_date + relativedelta(
                 months=self.duration_months
             )
-
-        if self.status == self.Status.OVERDUE:
-            overdue_days = (timezone.now().date() - self.end_date).days
-            self.late_payment_fee = max(
-                Decimal("0.00"), Decimal(overdue_days * self.penalty_rate)
-            )
-
-        if self.status == self.Status.IN_PROGRESS and self.approval_date:
-            self._update_wallet_balance()
-            # self.calculate_payment_plan().get_payment_status()
-
+        if not self.client.wallet:
+            Wallet.objects.create(user=self.client)
         super().save(*args, **kwargs)
 
     def _update_wallet_balance(self):
@@ -81,29 +71,12 @@ class Loan(models.Model):
         except Wallet.DoesNotExist:
             print(f"No wallet found for client {self.client.username}")
 
-    def calculate_payment_plan(self):
-        """Calculate and return the payment plan."""
-        calculator = PaymentPlanCalculator(
-            amount=self.amount,
-            interest_rate=self.interest_rate,
-            duration_months=self.duration_months,
-            start_date=self.start_date,
-            payment_schedule=self.payment_schedule,
-            client=self.client,
-            amount_paid=self.amount_paid,
-        )
-        return calculator
-
     def update_status(self):
         """Update loan status based on progress and overdue conditions."""
         if self.is_fully_repaid():
             self.status = self.Status.REPAID
         elif self.is_overdue():
             self.status = self.Status.OVERDUE
-        elif self.status == self.Status.PENDING and self.amount_paid > 0:
-            self.status = self.Status.IN_PROGRESS
-
-        self.save()
 
     def total_amount_to_pay(self):
         """Calculate total amount to repay, including interest."""
@@ -123,17 +96,21 @@ class Loan(models.Model):
 
     def is_fully_repaid(self):
         """Check if the loan is fully repaid."""
-        return self.remaining_amount() == Decimal("0.00")
+        return self.total_amount <= self.amount_paid
 
     def is_overdue(self):
         """Check if the loan is overdue."""
-        if not self.start_date or self.duration_months <= 0:
-            return False  # Or raise an exception if it's invalid data
+        return (
+            self.status not in [self.Status.REPAID, self.Status.CANCELLED]
+            and self.end_date
+            and timezone.now().date() > self.end_date  # Corrected line
+        )
 
-        # elapsed_months = (timezone.now().date() - self.start_date).days // 30
-        # expected_amount_paid = (self.total_amount_to_pay() / self.duration_months) * elapsed_months
-
-        # return self.amount_paid < expected_amount_paid
+    def payment_progress(self):
+        total = self.total_amount_to_pay()
+        if total == 0:
+            return 100
+        return int((self.amount_paid / total) * 100)
 
     class Meta:
         ordering = ["-start_date"]
@@ -157,9 +134,8 @@ class Wallet(models.Model):
     wallet_type = models.CharField(
         max_length=20, choices=WalletType.choices, default=WalletType.STANDARD
     )
-    balance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
-    max_withdrawal_limit = models.DecimalField(
-        max_digits=20, decimal_places=2, default=1000.00
+    balance = models.DecimalField(
+        max_digits=20, decimal_places=2, default=Decimal("0.00")
     )
     notifications_enabled = models.BooleanField(default=True)
 
@@ -167,17 +143,71 @@ class Wallet(models.Model):
         return f"{self.user.username}'s Wallet"
 
     def add_balance(self, amount: Decimal):
-        """Add funds to the wallet."""
+        """
+        Add funds to the wallet and log the activity.
+
+        Args:
+            amount (Decimal): The amount to add to the wallet balance.
+        """
         if amount > 0:
             self.balance += amount
             self.save()
+            WalletActivity.log_activity(wallet=self, activity_type="add", amount=amount)
 
-    def subtract_balance(self, amount):
-        """Subtract funds from the wallet."""
+    def subtract_balance(self, amount: Decimal):
+        """
+        Subtract funds from the wallet and log the activity.
+
+        Args:
+            amount (Decimal): The amount to subtract from the wallet balance.
+        """
         if amount > 0 and self.balance >= amount:
             self.balance -= amount
             self.save()
+            WalletActivity.log_activity(
+                wallet=self, activity_type="subtract", amount=amount
+            )
 
     class Meta:
         verbose_name = _("Wallet")
         verbose_name_plural = _("Wallets")
+
+
+class WalletActivity(models.Model):
+    ACTIVITY_CHOICES = [
+        ("add", _("Add Funds")),
+        ("subtract", _("Subtract Funds")),
+        ("update", _("Update Wallet")),
+    ]
+
+    wallet = models.ForeignKey(
+        Wallet, on_delete=models.CASCADE, related_name="activities"
+    )
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_CHOICES)
+    amount = models.DecimalField(
+        max_digits=20, decimal_places=2, default=Decimal("0.00")
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.wallet.user.email} - {self.activity_type} - {self.amount}"
+
+    @staticmethod
+    def log_activity(wallet, activity_type, amount):
+        """
+        Log an activity for a wallet.
+
+        Args:
+            wallet (Wallet): The wallet instance where the activity took place.
+            activity_type (str): The type of activity (add, subtract, update, etc.).
+            amount (Decimal): The amount involved in the activity.
+        """
+        description = f"Wallet: {wallet.user.email}'s Wallet, Activity: {activity_type}, Amount: {amount}"
+
+        WalletActivity.objects.create(
+            wallet=wallet,
+            activity_type=activity_type,
+            amount=amount,
+            description=description,
+        )

@@ -3,131 +3,137 @@ from decimal import Decimal
 
 
 class PaymentPlanCalculator:
-    def __init__(
-        self,
-        amount,
-        interest_rate,
-        duration_months,
-        start_date,
-        payment_schedule,
-        client,
-        amount_paid=None,
-        late_payment_fee_per_day=Decimal(5),  # Late payment fee per day
-    ):
-        self.amount = Decimal(amount)
-        self.amount_paid = Decimal(amount_paid or 0)
-        self.interest_rate = Decimal(interest_rate)
-        self.duration_months = duration_months
-        self.start_date = start_date
-        self.payment_schedule = payment_schedule
-        self.client = client  # Client object with wallet
-        self.payments_made = []  # Track payments
-        self.late_payment_fee_per_day = late_payment_fee_per_day  # Fee per day of delay
+    def __init__(self, loan):
+        """
+        Initialize the PaymentPlanCalculator with a Loan instance.
+        """
+        self.loan = loan
+        self.amount = loan.amount
+        self.interest_rate = loan.interest_rate
+        self.duration_months = loan.duration_months
+        self.start_date = loan.start_date
+        self.payment_schedule = loan.payment_schedule
+        self.client = loan.client
+        self.amount_paid = loan.amount_paid
+        self.late_payment_fee_per_day = Decimal(loan.penalty_rate)
 
     def calculate_payment_plan(self):
-        total_amount = self.amount + (self.amount * self.interest_rate / 100)
+        """
+        Calculate the payment plan based on the loan's details.
+        Only proceed if the loan status is IN_PROGRESS.
+        """
+        if self.loan.status != self.loan.Status.IN_PROGRESS:
+            raise ValueError(
+                "Payment plan can only be calculated for loans in IN_PROGRESS status."
+            )
 
-        if self.payment_schedule == "MONTHLY":
+        total_amount = self.loan.total_amount_to_pay()
+        if self.payment_schedule == self.loan.PaymentSchedule.MONTHLY:
             return self._generate_plan(total_amount, 30, "Month", self.duration_months)
-        elif self.payment_schedule == "QUARTERLY":
+        elif self.payment_schedule == self.loan.PaymentSchedule.QUARTERLY:
             return self._generate_plan(
                 total_amount, 90, "Quarter", self.duration_months // 3
             )
-        elif self.payment_schedule == "ANNUALLY":
+        elif self.payment_schedule == self.loan.PaymentSchedule.ANNUALLY:
             return self._generate_plan(
                 total_amount, 365, "Year", self.duration_months // 12
             )
 
     def _generate_plan(self, total_amount, days_in_period, period_name, periods):
+        """
+        Generate a detailed payment plan.
+        """
         payment_amount = total_amount / periods
         plan = []
         for i in range(1, periods + 1):
+            due_date = self.start_date + timedelta(days=days_in_period * i)
             plan.append(
                 {
                     "period": f"{period_name} {i}",
-                    "due_date": self.start_date + timedelta(days=days_in_period * i),
+                    "due_date": due_date,
                     "payment_amount": round(payment_amount, 2),
-                    "amount_paid": Decimal(0),  # Track partial payments
+                    "amount_paid": Decimal(0),
                     "status": "unpaid",
-                    "overdue_days": 0,  # Track overdue days
-                    "late_payment_fee": Decimal(0),  # Track late payment fee
+                    "overdue_days": 0,
+                    "late_payment_fee": Decimal(0),
                 }
             )
         return plan
 
     def deduct_payment(self):
-        """Deduct payments from the client's wallet and check payment for each period."""
-        current_date = datetime.now().date()
-        payment_plan = self.calculate_payment_plan()
+        """
+        Deduct payments and apply late fees if applicable.
+        Only proceed if the loan status is IN_PROGRESS.
+        """
+        current_date = datetime.now().date()  # Get the current date
+        payment_plan = self.calculate_payment_plan()  # Get the payment plan
+        for payment in payment_plan:
+            if self.loan.is_fully_repaid():
+                payment["status"] == "paid"
+            if self.loan.is_overdue():
+                payment["status"] = "overdue"
 
-        for i, scheduled_payment in enumerate(payment_plan):
-            payment_amount = scheduled_payment["payment_amount"]
-            if i == 0:
-                if payment_amount <= self.amount_paid:
-                    scheduled_payment["status"] = "paid"
-                if current_date <= scheduled_payment["due_date"]:
-                    scheduled_payment["status"] = "overdue"
+            # Check if the payment is overdue and not already paid
+            if (
+                current_date > payment["due_date"]
+                and payment["status"] == "unpaid"
+                and self.loan.total_amount <= self.loan.amount_paid
+            ):
+                overdue_days = max(0, (current_date - payment["due_date"]).days)
+                payment["overdue_days"] = overdue_days
+                payment["late_payment_fee"] = (
+                    self.late_payment_fee_per_day * overdue_days
+                )
+                self.loan.late_payment_fee = (
+                    self.loan.late_payment_fee or Decimal(0)
+                ) + payment["late_payment_fee"]
+                self.loan.save()
+                payment["status"] = "overdue"  # Update the status to "overdue"
 
-            if scheduled_payment["status"] == "unpaid":
-                if current_date >= scheduled_payment["due_date"]:
-                    # Check wallet balance for the current payment
-                    payment_amount = scheduled_payment["payment_amount"] * i
-                    if payment_amount <= self.amount_paid:
-                        scheduled_payment["status"] = "paid"
+            if payment["status"] == "unpaid" or payment["status"] == "paid":
+                # If the payment is marked as paid or unpaid, remove overdue_days and late_payment_fee if not applicable
+                payment.pop("overdue_days", None)
+                payment.pop("late_payment_fee", None)
 
-                    if self.client.wallet.balance >= payment_amount:
-                        # Deduct partial or full payment
-                        self.client.wallet.subtract_balance(payment_amount)
-                        scheduled_payment["amount_paid"] += payment_amount
-                        self.amount_paid += payment_amount
+            if payment["status"] == "unpaid" and current_date > payment["due_date"]:
+                if self.client.wallet.balance >= payment["payment_amount"]:
+                    # Deduct the payment amount from the client's wallet
+                    self.client.wallet.subtract_balance(payment["payment_amount"])
+                    self.client.wallet.save()
 
-                        self.payments_made.append(
-                            {
-                                "payment_date": scheduled_payment["due_date"],
-                                "amount": payment_amount,
-                            }
-                        )
-
-                    # After deducting, check if the full amount is paid
-                    if (
-                        scheduled_payment["amount_paid"]
-                        >= scheduled_payment["payment_amount"]
-                    ):
-                        scheduled_payment["status"] = "paid"
-                    else:
-                        scheduled_payment["status"] = (
-                            "unpaid"  # If not fully paid, mark as unpaid
-                        )
-                    if current_date >= scheduled_payment["due_date"]:
-                        scheduled_payment["status"] = "overdue"
-
-                # If overdue, calculate overdue days and apply late fee
-                if current_date > scheduled_payment["due_date"]:
-                    scheduled_payment["overdue_days"] = (
-                        current_date - scheduled_payment["due_date"]
-                    ).days
-                    if scheduled_payment["overdue_days"] > 0:
-                        # Apply late payment fee for each overdue day
-                        scheduled_payment["late_payment_fee"] = (
-                            scheduled_payment["overdue_days"]
-                            * self.late_payment_fee_per_day
-                        )
-                        self.client.wallet.subtract_balance(
-                            scheduled_payment["late_payment_fee"]
-                        )
-
-            # After checking each payment, mark status as paid if fully paid
-            if scheduled_payment["amount_paid"] >= scheduled_payment["payment_amount"]:
-                scheduled_payment["status"] = "paid"
-            elif scheduled_payment["amount_paid"] > 0:
-                scheduled_payment["status"] = "partial"
+                    # Update the loan's amount_paid
+                    self.loan.amount_paid = (
+                        self.loan.amount_paid or Decimal(0)
+                    ) + payment["payment_amount"]
+                    self.loan.save()
+                    # Update the payment record
+                    payment["amount_paid"] = payment["payment_amount"]
+                    payment["status"] = "paid"
+                else:
+                    # If the client can't pay, mark as overdue
+                    payment["status"] = "overdue"
 
         return payment_plan
 
     def get_payment_status(self):
-        """Return the status of all scheduled payments."""
+        """
+        Retrieve the payment status for all scheduled payments.
+        Display a message if the loan status is not IN_PROGRESS.
+        """
+        if self.loan.status != self.loan.Status.IN_PROGRESS:
+            # Display the message and return an empty status list
+            print(
+                "Payment status can only be retrieved for loans in IN_PROGRESS status."
+            )
+            return []
+
         payment_status = []
         for payment in self.deduct_payment():
+            if payment["status"] == "paid" or payment["status"] == "unpaid":
+                # Remove keys for overdue days and late payment fee if payment is already paid
+                payment.pop("overdue_days", None)
+                payment.pop("late_payment_fee", None)
+
             payment_status.append(
                 {
                     "period": payment["period"],
@@ -135,20 +141,18 @@ class PaymentPlanCalculator:
                     "payment_amount": payment["payment_amount"],
                     "amount_paid": payment["amount_paid"],
                     "status": payment["status"],
-                    "overdue_days": payment["overdue_days"],
-                    "late_payment_fee": payment["late_payment_fee"],
+                    # Only include overdue_days and late_payment_fee if they exist
+                    **(
+                        {"overdue_days": payment["overdue_days"]}
+                        if "overdue_days" in payment
+                        else {}
+                    ),
+                    **(
+                        {"late_payment_fee": payment["late_payment_fee"]}
+                        if "late_payment_fee" in payment
+                        else {}
+                    ),
                 }
             )
+
         return payment_status
-
-    def get_wallet_balance(self):
-        """Return the client's wallet balance."""
-        return round(self.client.wallet.balance, 2)
-
-    def get_total_paid(self):
-        """Return the total amount paid."""
-        return round(self.amount_paid, 2)
-
-    def get_payments_made(self):
-        """Return a list of all payments made by the client."""
-        return self.payments_made
