@@ -106,7 +106,6 @@ class LoanSerializer(serializers.ModelSerializer):
             "remaining_amount",
             "is_fully_repaid",
             "is_overdue",
-            "start_date",
             "end_date",
             "approval_date",
         ]

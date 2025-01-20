@@ -92,6 +92,8 @@ class WalletViewSet(viewsets.ModelViewSet):
         Admin users can see all wallets.
         """
         user = self.request.user
+        if not Wallet.objects.filter(user=user).exists():
+            Wallet.objects.create(user=user)
         if user.is_staff:
             return Wallet.objects.all()
         return Wallet.objects.filter(user=user)
