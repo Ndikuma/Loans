@@ -11,4 +11,5 @@ router.register(r"wallets", WalletViewSet, basename="wallet")
 # Include the router URLs
 urlpatterns = [
     path("", include(router.urls)),
+    # path('search/', LoanSearchView.as_view(), name='loan-search'),
 ]

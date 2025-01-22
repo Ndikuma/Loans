@@ -7,6 +7,7 @@ from config.settings.cors import *  # noqa
 
 # from config.settings.sentry import *  # noqa
 from config.settings.sessions import *  # noqa
+from config.settings.silk import *  # noqa
 
 env.read_env(os.path.join(BASE_DIR, ".env"))
 
@@ -31,6 +32,8 @@ INSTALLED_APPS = [
     "django_extensions",
     "config.apps.Loan",
     "corsheaders",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
 ]
 SITE_ID = 1
 
@@ -44,7 +47,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    # 'django.middleware.common.CommonMiddleware',
     "allauth.account.middleware.AccountMiddleware",
 ]
 
@@ -101,6 +103,18 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Loan Management API",
+    "DESCRIPTION": "API documentation for the Loan Management project",
+    "VEfrom elasticsearch_dsl.connections import connectionsRSION": "1.0.0",
+    "CONTACT": {"name": "Ndikumana Idris", "email": "ndiku6241@gmail.com"},
+    "LICENSE": {"name": "MIT License"},
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
 }
 
 REST_AUTH = {
@@ -125,3 +139,9 @@ SIMPLE_JWT = {
 ACCOUNT_EMAIL_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+
+SILKY_AUTHENTICATION = True  # Enables authentication for Silk views
+SILKY_AUTHORISATION = True  # Enables authorization for Silk views
+SILKY_META = True  # Logs meta details about requests
+SILKY_PYTHON_PROFILER = True  # Enables Python profiling
+SILKY_MAX_RECORDED_REQUESTS = 1000  # Limit on the number of requests to store
