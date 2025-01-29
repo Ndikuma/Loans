@@ -1,13 +1,19 @@
 from datetime import datetime
 from decimal import Decimal
 
+import django_filters
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from elasticsearch_dsl.query import MultiMatch
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from .documents import LoanDocument
 from .models import Loan, Wallet
-from .serializers import LoanSerializer, WalletSerializer
+from .serializers import LoanSerializer, LoansforelasticSerializer, WalletSerializer
 
 
 class LoanViewSet(viewsets.ModelViewSet):
@@ -18,6 +24,18 @@ class LoanViewSet(viewsets.ModelViewSet):
     queryset = Loan.objects.all()
     serializer_class = LoanSerializer
     permission_classes = [IsAuthenticated]
+    search_fields = ["client__username", "client__email", "status"]
+    ordering_fields = ["start_date", "end_date"]
+    filterset_fields = ["status", "amount", "interest_rate", "duration_months"]
+    lookup_field = "id"
+    ordering = ["-start_date"]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+
+    @method_decorator(
+        cache_page(60 * 15, key_prefix="loans_list")
+    )  # Cache for 15 minutes
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         """
@@ -85,6 +103,18 @@ class WalletViewSet(viewsets.ModelViewSet):
     queryset = Wallet.objects.all()
     serializer_class = WalletSerializer
     permission_classes = [IsAuthenticated]
+    search_fields = ["user__username", "user__email"]
+    ordering_fields = ["user__date_joined"]
+    filterset_fields = ["user__email", "balance", "notifications_enabled"]
+    lookup_field = "id"
+    ordering = ["-user__date_joined"]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+
+    @method_decorator(
+        cache_page(60 * 15, key_prefix="wallet_list")
+    )  # Cache for 15 minutes
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         """
@@ -149,3 +179,25 @@ class WalletViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class LoanSearchAPIView(APIView):
+    def get(self, request):
+        query = request.GET.get("q", "")  # Get the search query from the URL parameter
+
+        if query:
+            # Perform a multi-match search on the Elasticsearch index
+            search_results = LoanDocument.search().query(
+                MultiMatch(
+                    query=query,
+                    fields=["amount", "interest_rate", "status", "description"],
+                )
+            )
+        else:
+            search_results = (
+                LoanDocument.search()
+            )  # Return all results if no query is provided
+
+        # Serialize the results
+        loans = [LoansforelasticSerializer(hit).data for hit in search_results]
+        return Response(loans, status=status.HTTP_200_OK)

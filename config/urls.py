@@ -18,6 +18,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/", include("dj_rest_auth.urls")),
     path("", include("config.apps.Loan.urls")),
+    path("search/", include("config.apps.search.urls")),
+    # Silk monitoring endpoint
     path("silk/", include("silk.urls", namespace="silk")),
     path("auth/registration/", include("dj_rest_auth.registration.urls")),
     # Schema generation endpoint

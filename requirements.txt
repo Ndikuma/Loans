@@ -1,6 +1,6 @@
 Django
 djangorestframework
-djangorestframework-simplejwt==5.3.1
+djangorestframework-simplejwt
 django-rest-auth
 django-allauth
 django-cors-headers
@@ -9,3 +9,6 @@ django-extensions
 drf-spectacular
 drf-spectacular-sidecar
 gunicorn
+django_elasticsearch_dsl
+django_elasticsearch_dsl_drf
+psycopg2-binary

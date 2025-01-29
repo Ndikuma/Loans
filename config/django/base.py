@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 
 from config.env import BASE_DIR, env
+from config.settings.cache_redis import *  # noqa
 from config.settings.celery import *  # noqa
 from config.settings.cors import *  # noqa
 
@@ -20,8 +21,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "django_filters",
     "rest_framework.authtoken",
     "silk",
+    "django_elasticsearch_dsl",
     "django.contrib.sites",
     "dj_rest_auth",
     "config.apps.authantification",
@@ -30,10 +33,12 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "dj_rest_auth.registration",
     "django_extensions",
+    "django",
     "config.apps.Loan",
     "corsheaders",
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    "config.apps.search",
 ]
 SITE_ID = 1
 
@@ -104,6 +109,22 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "ORDERING_PARAM": "ordering",
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+    },
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFFAUT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 1,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -145,3 +166,18 @@ SILKY_AUTHORISATION = True  # Enables authorization for Silk views
 SILKY_META = True  # Logs meta details about requests
 SILKY_PYTHON_PROFILER = True  # Enables Python profiling
 SILKY_MAX_RECORDED_REQUESTS = 1000  # Limit on the number of requests to store
+
+
+# Elasticsearch settings
+# settings.py
+
+ELASTICSEARCH_DSL = {
+    "default": {
+        "hosts": "https://my-elasticsearch-project-e2edb7.es.us-east-1.aws.elastic.cloud:443",
+        # 'http_auth': ('username', 'password'),  # If authentication is required
+        "api_key": "SC14ZnNwUUI4c2ItUlFCdVJwQlg6VmxfSWtkNzBSYXF0MVdmMS0xUEZOUQ==",  # Use your actual API key
+    }
+}
+
+
+# If you want to use a different cache backend, you can modify this settings accordingly.

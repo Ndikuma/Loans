@@ -20,5 +20,3 @@ exclude =
 
 # Specify file types to check
 filename = *.py
-
-# Additional Flake8 plugins can be added here if needed

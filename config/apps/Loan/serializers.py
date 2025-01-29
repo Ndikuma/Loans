@@ -61,6 +61,17 @@ class WalletSerializer(serializers.ModelSerializer):
         return wallet
 
 
+class LoansforelasticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Loan
+        fields = [
+            "amount",
+            "interest_rate",
+            "status",
+            "description",
+        ]
+
+
 class LoanSerializer(serializers.ModelSerializer):
     remaining_amount = serializers.DecimalField(
         max_digits=20, decimal_places=2, read_only=True
