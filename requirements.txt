@@ -12,3 +12,5 @@ gunicorn
 django_elasticsearch_dsl
 django_elasticsearch_dsl_drf
 psycopg2-binary
+django_filters
+django-environ
