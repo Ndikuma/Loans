@@ -8,12 +8,6 @@ ENV PYTHONUNBUFFERED 1
 # Set the working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev && \
-    apt-get clean
-
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
@@ -21,8 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code
 COPY . /app/
 
-# Expose the application port
-EXPOSE 8080
+# Ensure the start script is executable
+RUN chmod +x /app/scripts/start.sh
 
-# Run the Django development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8080"]
+# Set the entrypoint to the script
+ENTRYPOINT ["/bin/sh", "/app/scripts/start.sh"]

@@ -12,5 +12,9 @@ gunicorn
 django_elasticsearch_dsl
 django_elasticsearch_dsl_drf
 psycopg2-binary
-django_filters
+django-filter==24.3
+dj_rest_auth
+django_redis
 django-environ
+requests
+

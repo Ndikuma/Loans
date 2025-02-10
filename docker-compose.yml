@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+    restart: always
+    volumes:
+      - static-data:/vol/static
+      - media-data:/vol/media
+    depends_on:
+      - redis
+      - elasticsearch
+
+  proxy:
+    build:
+      context: ./proxy
+    restart: always
+    volumes:
+      - static-data:/vol/static
+      - media-data:/vol/media
+    ports:
+      - 80:80
+    depends_on:
+      - app
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6378:6379"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+volumes:
+  static-data:
+  media-data:
+  elasticsearch-data:
