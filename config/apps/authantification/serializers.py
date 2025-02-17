@@ -1,8 +1,29 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
 
-from .models import Role
 
+from .models import Role,User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "is_active",
+         
+          ]
+        read_only_fields = ["is_active", "id"]
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ["id", "name"]
 
 class RegisterSerializer(RegisterSerializer):
     role = serializers.PrimaryKeyRelatedField(

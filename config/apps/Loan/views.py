@@ -129,6 +129,13 @@ class WalletViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return Wallet.objects.all()
         return Wallet.objects.filter(user=user)
+    
+    @action(detail=True, methods=["get"])
+    def get_wallet_balance(self, request, pk=None):
+        wallet = self.get_object()
+        return Response({
+            "balance": wallet.balance
+        })
 
     @action(detail=True, methods=["post"])
     def add_balance(self, request, id=None):
