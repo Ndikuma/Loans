@@ -21,11 +21,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code into the container
 COPY . /app/
+COPY ./static/ /vol/static/
 
 # Run migrations and collect static files during the build process
 # RUN python manage.py makemigrations --noinput
 RUN python manage.py migrate --noinput
-# RUN python manage.py collectstatic --noinput
+RUN python manage.py collectstatic --noinput
 
 # Set the entrypoint to Gunicorn for running the Django app
 CMD ["gunicorn", "config.wsgi", "-b", "0.0.0.0:8000"]

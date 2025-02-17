@@ -122,7 +122,8 @@ MEDIA_ROOT = BASE_DIR / 'Loans/','media'
 STATIC_URL = '/static/'
 
 # Directory where collected static files will be stored
-STATIC_ROOT = os.path.join(BASE_DIR, 'Loans/','static')
+STATIC_ROOT = '/vol/static/'
+
 
 # If you want to collect static files from additional locations
 
