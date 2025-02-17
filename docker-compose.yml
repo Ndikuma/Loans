@@ -28,21 +28,24 @@ services:
     image: redis:alpine
     restart: always
     ports:
-      - "6378:6379"
+      - "6379:6379"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
     restart: always
     environment:
       - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=idris23
+      - xpack.security.enabled=true
     ports:
       - "9200:9200"
       - "9300:9300"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
+    
 
 volumes:
   static-data:
   media-data:
   elasticsearch-data:
+    driver: local

@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-
+from django.utils.translation import gettext_lazy as _
 from config.env import BASE_DIR, env
 from config.settings.cache_redis import *  # noqa
 from config.settings.celery import *  # noqa
@@ -45,6 +45,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'django.middleware.locale.LocaleMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -53,6 +54,7 @@ MIDDLEWARE = [
     "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+ 
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -60,7 +62,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "loans" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -90,14 +92,42 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internationalization
+# Internationalization settings
 LANGUAGE_CODE = "en-us"
+
+LANGUAGES = [
+    ('de', _('German')),
+    ('en', _('English')),
+    ('es', _('Spanish')),
+    ('fr', _('French')),
+    ('it', _('Italian')),
+    ('nl', _('Dutch')),
+    ('pl', _('Polish')),
+    ('pt', _('Portuguese')),
+    ('ru', _('Russian')),
+]
 TIME_ZONE = "UTC"
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
 
-# Static files
-STATIC_URL = "static/"
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, "locale"),
+]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'Loans/','media'
+
+
+STATIC_URL = '/static/'
+
+# Directory where collected static files will be stored
+STATIC_ROOT = os.path.join(BASE_DIR, 'Loans/','static')
+
+# If you want to collect static files from additional locations
+
+# Email settings
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # REST Framework
@@ -123,8 +153,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ),
-    "DEFFAUT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 1,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -158,8 +188,9 @@ SIMPLE_JWT = {
 }
 
 ACCOUNT_EMAIL_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+# ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 
 SILKY_AUTHENTICATION = True  # Enables authentication for Silk views
 SILKY_AUTHORISATION = True  # Enables authorization for Silk views
@@ -172,12 +203,13 @@ SILKY_MAX_RECORDED_REQUESTS = 1000  # Limit on the number of requests to store
 # settings.py
 
 ELASTICSEARCH_DSL = {
-    "default": {
-        "hosts": "https://my-elasticsearch-project-e2edb7.es.us-east-1.aws.elastic.cloud:443",
-        # 'http_auth': ('username', 'password'),  # If authentication is required
-        "api_key": "SC14ZnNwUUI4c2ItUlFCdVJwQlg6VmxfSWtkNzBSYXF0MVdmMS0xUEZOUQ==",  # Use your actual API key
-    }
+    'default': {
+        "hosts": "http://elasticsearch:9200", # Use HTTPS if security is enabled
+        'http_auth': ('elastic', 'idris23'),  # Username and password
+        'verify_certs': False,  # Disable SSL verification (only for local dev)
+    },
 }
+
 
 
 # If you want to use a different cache backend, you can modify this settings accordingly.

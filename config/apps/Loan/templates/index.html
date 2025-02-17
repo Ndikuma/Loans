@@ -1,0 +1,42 @@
+{% load i18n %}
+
+
+
+
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{% blocktrans %}Welcome{% endblocktrans %}</title>
+</head>
+<body>
+
+    <h1>{% blocktrans %}Hello, World!{% endblocktrans %}</h1>
+    {% blocktrans %}
+
+    <h1>Hello, World!</h1>
+    <p>This is a sample template.</p>
+ 
+    <p>{{title}}</p>
+    <p>{{ message}}</p>
+    
+    {% endblocktrans %}
+
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <label for="language">{% blocktrans %}Choose Language:{% endblocktrans %}</label>
+        <select name="language" id="language" onchange="this.form.submit()">
+            {% get_available_languages as LANGUAGES %}
+            {% for lang_code, lang_name in LANGUAGES %}
+                <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
+                    {{ lang_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+
+</body>
+</html>
+

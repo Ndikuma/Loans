@@ -1,0 +1,153 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-10 19:38+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: config/apps/Loan/models.py:13
+msgid "Pending"
+msgstr ""
+
+#: config/apps/Loan/models.py:14
+msgid "In Progress"
+msgstr ""
+
+#: config/apps/Loan/models.py:15
+msgid "Repaid"
+msgstr ""
+
+#: config/apps/Loan/models.py:16
+msgid "Overdue"
+msgstr ""
+
+#: config/apps/Loan/models.py:17
+msgid "Cancelled"
+msgstr ""
+
+#: config/apps/Loan/models.py:21
+msgid "Monthly"
+msgstr ""
+
+#: config/apps/Loan/models.py:22
+msgid "Quarterly"
+msgstr ""
+
+#: config/apps/Loan/models.py:23
+msgid "Annually"
+msgstr ""
+
+#: config/apps/Loan/models.py:117
+msgid "Loan"
+msgstr ""
+
+#: config/apps/Loan/models.py:118
+msgid "Loans"
+msgstr ""
+
+#: config/apps/Loan/models.py:129
+msgid "Standard"
+msgstr ""
+
+#: config/apps/Loan/models.py:130
+msgid "Premium"
+msgstr ""
+
+#: config/apps/Loan/models.py:131
+msgid "Business"
+msgstr ""
+
+#: config/apps/Loan/models.py:172
+msgid "Wallet"
+msgstr ""
+
+#: config/apps/Loan/models.py:173
+msgid "Wallets"
+msgstr ""
+
+#: config/apps/Loan/models.py:178
+msgid "Add Funds"
+msgstr ""
+
+#: config/apps/Loan/models.py:179
+msgid "Subtract Funds"
+msgstr ""
+
+#: config/apps/Loan/models.py:180
+msgid "Update Wallet"
+msgstr ""
+
+#: config/apps/Loan/templates/index.html:7
+msgid "Welcome"
+msgstr ""
+
+#: config/apps/Loan/templates/index.html:11
+msgid "Hello, World!"
+msgstr ""
+
+#: config/apps/Loan/templates/index.html:18
+msgid "Choose Language:"
+msgstr ""
+
+#: config/apps/Loan/views.py:209
+msgid "Loan Management System"
+msgstr ""
+
+#: config/apps/Loan/views.py:211
+msgid ""
+"Welcome to the Loan Management System! This is a placeholder template. "
+"Replace this with your own HTML and "
+msgstr ""
+
+#: config/apps/authantification/models.py:22
+msgid "email address"
+msgstr ""
+
+#: config/django/base.py:99
+msgid "German"
+msgstr ""
+
+#: config/django/base.py:100
+msgid "English"
+msgstr ""
+
+#: config/django/base.py:101
+msgid "Spanish"
+msgstr ""
+
+#: config/django/base.py:102
+msgid "French"
+msgstr ""
+
+#: config/django/base.py:103
+msgid "Italian"
+msgstr ""
+
+#: config/django/base.py:104
+msgid "Dutch"
+msgstr ""
+
+#: config/django/base.py:105
+msgid "Polish"
+msgstr ""
+
+#: config/django/base.py:106
+msgid "Portuguese"
+msgstr ""
+
+#: config/django/base.py:107
+msgid "Russian"
+msgstr ""

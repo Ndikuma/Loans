@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
+from django.shortcuts import render
 import django_filters
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -10,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.utils.translation import gettext_lazy as _
 
 from .documents import LoanDocument
 from .models import Loan, Wallet
@@ -54,7 +56,7 @@ class LoanViewSet(viewsets.ModelViewSet):
         serializer.save(client=self.request.user)
 
     @action(detail=True, methods=["post"])
-    def approve(self, request, pk=None):
+    def approve(self, request, id=None):
         try:
             loan = self.get_object()
             current_date = datetime.now().date()
@@ -76,7 +78,7 @@ class LoanViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=["post"])
-    def reject(self, request, pk=None):
+    def reject(self, request, id=None):
         try:
             loan = self.get_object()
             if loan.status == loan.Status.PENDING:
@@ -129,7 +131,7 @@ class WalletViewSet(viewsets.ModelViewSet):
         return Wallet.objects.filter(user=user)
 
     @action(detail=True, methods=["post"])
-    def add_balance(self, request, pk=None):
+    def add_balance(self, request, id=None):
         try:
             wallet = self.get_object()
             amount = Decimal(request.data.get("amount", 0))
@@ -151,7 +153,7 @@ class WalletViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=["post"])
-    def subtract_balance(self, request, pk=None):
+    def subtract_balance(self, request, id=None):
         try:
             wallet = self.get_object()
             amount = Decimal(request.data.get("amount", 0))
@@ -201,3 +203,14 @@ class LoanSearchAPIView(APIView):
         # Serialize the results
         loans = [LoansforelasticSerializer(hit).data for hit in search_results]
         return Response(loans, status=status.HTTP_200_OK)
+
+def index(request):
+    context={
+        "title": _("Loan Management System") , # Add your title here if needed
+        # Add any other context variables you want to pass to the template here.  # For example:
+        "message": _("Welcome to the Loan Management System! This is a placeholder template. Replace this with your own HTML and ")
+
+
+    }
+    return render(request, "index.html",context)
+  

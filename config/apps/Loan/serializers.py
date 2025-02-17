@@ -87,7 +87,6 @@ class LoanSerializer(serializers.ModelSerializer):
         model = Loan
         fields = [
             "id",
-            "client",
             "amount",
             "interest_rate",
             "duration_months",

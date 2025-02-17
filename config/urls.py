@@ -6,7 +6,8 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-
+from django.conf import settings
+from django.conf.urls.static import static
 
 def trigger_error(request):
     division_by_zero = 1 / 0
@@ -30,3 +31,6 @@ urlpatterns = [
         "swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"
     ),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
